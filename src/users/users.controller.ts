@@ -1,9 +1,16 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { UsersService } from './users.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Put
+} from '@nestjs/common';
+import { UpdateUserDto } from './dto/update.dto';
 import { User } from './interfaces/user.interface';
-
-// import { CreateCatDto } from './dto/create.dto';
-// import { UpdateCatDto } from './dto/update.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
@@ -11,15 +18,34 @@ export class UsersController {
 
   @Get()
   async findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+    const users = await this.usersService.findAll();
+
+    return users.map((user) => {
+      delete user.password;
+      return user;
+    });
   }
 
   @Post()
   @HttpCode(201)
-  create(@Body() createUserDto: any): string {
-    console.log('🚀 ~ createCatDto', createUserDto);
-    // this.catsService.create(createUserDto);
-    return 'This action adds a new user';
+  async create(@Body() createUserDto: any): Promise<number> {
+    const user = await this.usersService.add(createUserDto);
+    return user.id;
+  }
+
+  @Put(':id')
+  @HttpCode(201)
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<number> {
+    await this.usersService.edit(+id, updateUserDto);
+    return +id;
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string): string {
+    return `This action removes a #${+id} cat`;
   }
 
   // @Get()
@@ -38,8 +64,6 @@ export class UsersController {
   //   return `This action updates a #${id} cat`;
   // }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string): string {
-  //   return `This action removes a #${id} cat`;
-  // }
+  // const user = await this.usersService.findOne(+id);
+  // delete user.password;
 }
