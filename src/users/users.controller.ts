@@ -6,7 +6,7 @@ import {
   HttpCode,
   Param,
   Post,
-  Put
+  Put,
 } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update.dto';
 import { User } from './interfaces/user.interface';

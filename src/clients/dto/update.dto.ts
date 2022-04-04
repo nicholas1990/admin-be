@@ -2,15 +2,15 @@ export interface UpdateClientDto {
   email: string;
   name: string;
   surname: string;
-  parentName: string;
-  parentSurname: string;
+  parentName?: string;
+  parentSurname?: string;
   address: string;
   cap: number;
   city: string;
   born: Date;
   bornPlace: string;
   cf: string;
-  parentCf: string;
+  parentCf?: string;
   phone: string;
   cardNumber: number;
   cardYear: number;
