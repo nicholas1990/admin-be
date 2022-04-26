@@ -1,18 +1,61 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Query } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
+import { PasswordService } from '../shared/service/password.service';
+import { UpdateUserDto } from './dto/update.dto';
 import { User } from './entity/user.entity';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly passwordService: PasswordService,
   ) {}
 
-  findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async getAll(
+    offset?: number,
+    limit?: number,
+    role?: 'admin' | 'operator',
+    email?: string,
+  ): Promise<{ items: User[]; count: number }> {
+    const filters: any = {};
+
+    if (role) {
+      filters.role = role;
+    }
+
+    if (email) {
+      filters.email = email;
+    }
+
+    let conditions: any;
+
+    if (filters) {
+      conditions = {
+        ...filters,
+      };
+    }
+
+    const [items, count] = await this.userRepository.findAndCount({
+      order: {
+        id: 'ASC',
+      },
+      skip: offset,
+      take: limit,
+      where: conditions,
+    });
+
+    return {
+      items,
+      count,
+    };
+  }
+
+  getAllRemoved(): Promise<User[]> {
+    return this.userRepository.find({
+      withDeleted: true,
+      where: { deletedAt: Not(IsNull()) },
+    });
   }
 
   async findOne(id: number): Promise<User> {
@@ -22,33 +65,30 @@ export class UsersService {
   }
 
   async findOneByEmail(email: string): Promise<User | undefined> {
-    console.log('findOneByEmail');
     return await this.userRepository.findOne({
       email: email,
     });
   }
 
-  // async findOne(username: string): Promise<User | undefined> {
-  //   return this.users.find(user => user.username === username);
-  // }
-
   async add(user: User) {
-    user.password = await this.setPassword(user.password); // TODO: chiedere
-    // user.role = user.role ?? 'user';
+    user.password = await this.passwordService.getPasswordHash(user.password);
 
     const newUser = this.userRepository.create(user);
     return await this.userRepository.save(newUser);
   }
 
-  private async setPassword(password: string) {
-    return await bcrypt.hash(password, 10);
+  async edit(id: number, user: UpdateUserDto) {
+    return await this.userRepository.update(id, {
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
   }
 
-  async edit(id: number, user: Partial<User>) {
-    return await this.userRepository.update(id, user);
+  async editPassword(id: number, password: string) {
+    return await this.userRepository.update(id, { password });
   }
 
-  async remove(id: number): Promise<void> {
-    await this.userRepository.delete(id);
+  async remove(id: number) {
+    return await this.userRepository.softDelete(id);
   }
 }

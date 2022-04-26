@@ -4,24 +4,46 @@ import {
   Delete,
   Get,
   HttpCode,
-  InternalServerErrorException,
+  NotFoundException,
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
+import { PaginationParams } from 'src/shared/entity/pagination-params.entity';
+import { ClientsFilterParams } from 'src/shared/entity/clients-params-entity';
 import { ClientsService } from './clients.service';
 import { UpdateClientDto } from './dto/update.dto';
-import { Client } from './interfaces/client.interface';
-// import { UpdateUserDto } from './dto/update.dto';
 
 @Controller('clients')
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
+  /**
+   * Assume born is year in Date
+   *
+   * @param active: boolean
+   * @param born: year in Date
+   * @returns
+   */
   @Get()
-  async findAll(): Promise<any[]> {
-    const clients = await this.clientsService.findAll();
-    return clients;
+  async findAll(
+    @Query() { offset, limit }: PaginationParams,
+    @Query() { active, born, cardYear, search }: ClientsFilterParams,
+  ): Promise<{ data: any[]; total: number }> {
+    const { items, count } = await this.clientsService.getAll(
+      offset,
+      limit,
+      active,
+      born,
+      cardYear,
+      search,
+    );
+
+    return {
+      data: items,
+      total: count,
+    };
   }
 
   @Post()
@@ -41,7 +63,12 @@ export class ClientsController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.clientsService.remove(+id);
+  async delete(@Param('id') id: string): Promise<void> {
+    const deleteResponse = await this.clientsService.remove(+id);
+    console.log('deleteResponse', deleteResponse);
+
+    if (!deleteResponse.affected) {
+      throw new NotFoundException();
+    }
   }
 }

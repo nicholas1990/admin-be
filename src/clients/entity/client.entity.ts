@@ -1,9 +1,12 @@
+import { Payment } from 'src/payments/entity/payment.entity';
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
   BaseEntity,
+  Column,
   CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -12,7 +15,7 @@ import {
 })
 export class Client extends BaseEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: string;
 
   @Column({ unique: true })
   email: string;
@@ -68,12 +71,20 @@ export class Client extends BaseEntity {
   @Column({ default: false })
   isDisabled: boolean;
 
+  @Column()
+  note: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column()
-  note: string;
+  @DeleteDateColumn()
+  deletedAt: Date;
+
+  @OneToMany(() => Payment, (payment: Payment) => payment.id, {
+    cascade: true,
+  })
+  public payment: Payment[];
 }

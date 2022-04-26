@@ -2,19 +2,25 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AreasModule } from './area/areas.module';
+import { Area as AreaEntity } from './area/entity/area.entity';
 import { AuthModule } from './auth/auth.module';
-import { CatsModule } from './cats/cats.module';
-import { Cat as CatEntity } from './cats/entity/cats.entity';
+import { ClientsModule } from './clients/clients.module';
 import { Client as ClientEntity } from './clients/entity/client.entity';
-import { ClientsModule } from './clients/users.module';
+import { Payment as PaymentsEntity } from './payments/entity/payment.entity';
+import { PaymentsModule } from './payments/payments.module';
+import { Society as SocietyEntity } from './societies/entity/society.entity';
+import { SocietiesModule } from './societies/societies.module';
 import { User as UserEntity } from './users/entity/user.entity';
 import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    CatsModule,
     UsersModule,
     ClientsModule,
+    AreasModule,
+    SocietiesModule,
+    PaymentsModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -22,8 +28,13 @@ import { UsersModule } from './users/users.module';
       username: 'postgres',
       password: 'postgres',
       database: 'postgres',
-      // entities: ['./*/entity/*.entity.ts'],
-      entities: [UserEntity, CatEntity, ClientEntity],
+      entities: [
+        UserEntity,
+        ClientEntity,
+        AreaEntity,
+        PaymentsEntity,
+        SocietyEntity,
+      ], // entities: ['./*/entity/*.entity.ts'],
       synchronize: true,
     }),
     AuthModule,

@@ -19,6 +19,3 @@ export interface UpdateClientDto {
   isDisabled: boolean;
   note: string;
 }
-
-// Modifica di un nuovo cliente
-// Endpoint: PUT /admin/client

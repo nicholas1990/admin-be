@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity } from 'typeorm';
+// import { Exclude } from 'class-transformer';
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity({
   name: 'users',
@@ -17,6 +26,7 @@ export class User extends BaseEntity {
   email: string;
 
   @Column()
+  // @Exclude()
   password: string;
 
   @Column({ default: 'user' })
@@ -24,4 +34,13 @@ export class User extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn()
+  public deletedAt: Date;
 }

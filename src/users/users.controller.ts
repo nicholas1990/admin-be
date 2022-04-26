@@ -4,26 +4,69 @@ import {
   Delete,
   Get,
   HttpCode,
+  InternalServerErrorException,
+  NotFoundException,
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
+import { PaginationParams } from 'src/shared/entity/pagination-params.entity';
+import { UsersFilterParams } from 'src/shared/entity/users-params-entity';
+import { PasswordService } from 'src/shared/service/password.service';
+import { OutputUser } from './dto/output.dto';
 import { UpdateUserDto } from './dto/update.dto';
-import { User } from './interfaces/user.interface';
+import { UpdatePasswordUserDto } from './dto/update_password.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly passwordService: PasswordService,
+  ) {}
 
+  /**
+   * TODO: Exclude password in entity file.
+   */
   @Get()
-  async findAll(): Promise<User[]> {
-    const users = await this.usersService.findAll();
+  async findAll(
+    @Query() { offset, limit }: PaginationParams,
+    @Query() { role, search }: UsersFilterParams,
+  ): Promise<{ data: OutputUser[]; total: number }> {
+    const users = await this.usersService.getAll(offset, limit, role, search);
+    return {
+      data: users.items.map((item) => {
+        return {
+          id: item.id,
+          firstName: item.firstName,
+          lastName: item.lastName,
+          email: item.email,
+          role: item.role,
+          isActive: item.isActive,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          deletedAt: item.deletedAt,
+        };
+      }),
+      total: users.count,
+    };
+  }
 
-    return users.map((user) => {
-      delete user.password;
-      return user;
-    });
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<OutputUser> {
+    const user = await this.usersService.findOne(+id);
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      deletedAt: user.deletedAt,
+    };
   }
 
   @Post()
@@ -34,7 +77,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  @HttpCode(201)
+  @HttpCode(204)
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -43,27 +86,39 @@ export class UsersController {
     return +id;
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string): string {
-    return `This action removes a #${+id} cat`;
+  @Put('change_password/:id')
+  @HttpCode(204)
+  async updatePassword(
+    @Param('id') id: string,
+    @Body() updatePasswordDto: UpdatePasswordUserDto,
+  ): Promise<number> {
+    const { oldPassword, newPassword } = updatePasswordDto;
+    const user = await this.usersService.findOne(+id);
+
+    const checkPassword = await this.passwordService.comparePassword(
+      oldPassword,
+      user.password,
+    );
+
+    if (!checkPassword) {
+      throw new InternalServerErrorException();
+    }
+
+    const newPasswordHash = await this.passwordService.getPasswordHash(
+      newPassword,
+    );
+
+    await this.usersService.editPassword(+id, newPasswordHash);
+    return +id;
   }
 
-  // @Get()
-  // findAll(@Req() request: Request): string {
-  //   return 'This action returns all cats';
-  // }
+  @Delete(':id')
+  @HttpCode(204)
+  async delete(@Param('id') id: string): Promise<void> {
+    const deleteResponse = await this.usersService.remove(+id);
 
-  // @Get(':id')
-  // findOne(@Param() id: string): string {
-  //   return `This action returns a #${id} cat`;
-  // }
-
-  // @Put(':id')
-  // update(@Param('id') id: string, @Body() updateCatDto: UpdateCatDto): string {
-  //   console.log('🚀 ~ updateCatDto', updateCatDto);
-  //   return `This action updates a #${id} cat`;
-  // }
-
-  // const user = await this.usersService.findOne(+id);
-  // delete user.password;
+    if (!deleteResponse.affected) {
+      throw new NotFoundException();
+    }
+  }
 }

@@ -19,6 +19,3 @@ export interface CreateClientDto {
   isDisabled: boolean;
   note: string;
 }
-
-// Creazione di un nuovo cliente
-// Endpoint: POST /admin/client

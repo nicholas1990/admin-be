@@ -19,7 +19,7 @@ export class AppController {
     const user = await this.authService.login(req.body.user);
 
     if (!user) {
-      console.log('EXCEPTIONS', user ?? false);
+      console.log('EXCEPTIONS:', user, user ?? false);
       throw new UnauthorizedException();
     }
 

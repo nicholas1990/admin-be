@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { PasswordService } from 'src/shared/service/password.service';
 import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -28,23 +29,28 @@ export class AuthService {
       return;
     }
 
-    // Verify if Password is correct
-    if (!(await bcrypt.compare(user.password, _user.password))) {
+    const checkPassword = await this.passwordService.comparePassword(
+      user.password,
+      _user.password,
+    );
+
+    if (!checkPassword) {
       return;
     }
 
-    const payload = {
-      id: _user.id,
-      email: _user.email,
-      firstName: _user.firstName,
-      lastName: _user.lastName,
-      role: _user.role,
-      isActive: _user.isActive,
-    };
-    console.log('payload:', payload);
-
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign({
+        id: _user.id,
+        email: _user.email,
+        name: _user.firstName,
+        surname: _user.lastName,
+        role: _user.role,
+        isActive: _user.isActive,
+      }),
     };
   }
+
+  // async checkPassword(plainText: string, hash: string) {
+  //   return await this.passwordService.comparePassword(plainText, hash);
+  // }
 }

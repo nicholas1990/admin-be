@@ -18,7 +18,8 @@ export interface Client {
   isActive: boolean;
   payed: boolean;
   isDisabled: boolean;
-  createdAt: Date; // creationDate: Date;
-  updatedAt: Date;
   note: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
 }

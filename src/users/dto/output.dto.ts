@@ -1,9 +1,8 @@
-export interface User {
+export class OutputUser {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
   role: string;
   isActive: boolean;
   createdAt: Date;
